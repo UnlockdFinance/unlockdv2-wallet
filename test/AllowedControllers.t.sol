@@ -97,7 +97,7 @@ contract AllowedControllersTest is Config {
 
     function test_setDelegationControllerAllowance_onlyOwner() public {
         vm.prank(karpincho);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(Errors.Caller_notAdmin.selector); // Dani
         allowedControllers.setDelegationControllerAllowance(karpincho, true);
     }
 
@@ -118,7 +118,7 @@ contract AllowedControllersTest is Config {
         controllers[0] = karpincho;
         bool[] memory allowances = new bool[](1);
         vm.prank(karpincho);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(Errors.Caller_notAdmin.selector); // Dani
         allowedControllers.setDelegationControllerAllowances(controllers, allowances);
     }
 
