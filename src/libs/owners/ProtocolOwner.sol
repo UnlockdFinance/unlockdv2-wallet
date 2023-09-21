@@ -13,15 +13,15 @@ import { AssetLogic } from "../logic/AssetLogic.sol";
 import { SafeLogic } from "../logic/SafeLogic.sol";
 import { Errors } from "../helpers/Errors.sol";
 
-import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ECDSA } from "../../../lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import { IERC721 } from "../../../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import { Initializable } from "../../../lib/openzeppelin-contracts//contracts/proxy/utils/Initializable.sol";
+import { BeaconProxy } from "../../../lib/openzeppelin-contracts//contracts/proxy/beacon/BeaconProxy.sol";
+import { EnumerableSet } from "../../../lib/openzeppelin-contracts//contracts/utils/structs/EnumerableSet.sol";
 
-import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
-import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
-import { ISignatureValidator } from "@gnosis.pm/safe-contracts/contracts/interfaces/ISignatureValidator.sol";
+import { Enum } from "../../../lib/safe-contracts/contracts/common/Enum.sol";
+import { GnosisSafe } from "../../../lib/safe-contracts/contracts/GnosisSafe.sol";
+import { ISignatureValidator } from "../../../lib/safe-contracts/contracts/interfaces/ISignatureValidator.sol";
 
 import { BaseSafeOwner } from "../base/BaseSafeOwner.sol";
 
@@ -77,6 +77,9 @@ contract ProtocolOwner is Initializable, BaseSafeOwner, IProtocolOwner {
     ////////////////////////////////////////////////////////////////////////////////
     // Public Functions
     ////////////////////////////////////////////////////////////////////////////////
+    function getSafe() external view override returns (address) {
+        return safe;
+    }
 
     function approveSale(
         address _collection,

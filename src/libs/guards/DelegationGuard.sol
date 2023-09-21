@@ -57,6 +57,7 @@ contract DelegationGuard is Guard, Initializable {
     constructor(address _cryptoPunks) {
         cryptoPunks = _cryptoPunks;
         _disableInitializers();
+        managerOwners[address(0)] = false;
     }
 
     function initialize(address _delegationOwner, address _protocolOwner) public initializer {

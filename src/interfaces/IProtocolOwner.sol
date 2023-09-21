@@ -64,4 +64,7 @@ interface IProtocolOwner {
     function getLoanId(bytes32 _assetId) external returns (bytes32);
 
     function setLoanId(bytes32 _assetId, bytes32 _loanId) external;
+
+    function getSafe() external view returns (address);
 }
+
