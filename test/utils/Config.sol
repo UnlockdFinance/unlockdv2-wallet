@@ -94,7 +94,6 @@ contract Config is Test {
         aclManager.setProtocol(kakaroto);
 
         aclManager.addProtocolAdmin(kakaroto);
-        aclManager.addProtocolAdmin(address(this)); // Dani!!
         aclManager.addGovernanceAdmin(kakaroto);
         aclManager.addEmergencyAdmin(kakaroto);
         vm.stopPrank();
