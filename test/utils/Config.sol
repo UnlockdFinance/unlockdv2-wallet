@@ -66,10 +66,12 @@ contract Config is Test {
     address public safeProxy;
     address public delegationOwnerProxy;
     address public delegationGuardProxy;
+    address public protocolOwnerProxy;
 
     GnosisSafe public safe;
     DelegationOwner public delegationOwner;
     DelegationGuard public delegationGuard;
+    ProtocolOwner public protocolOwner;
 
     address[] public lockControllers;
     address[] public delegationControllers;

@@ -13,6 +13,7 @@ import { IDelegationWalletRegistry } from "./interfaces/IDelegationWalletRegistr
 import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 import { DelegationOwner } from "./libs/owners/DelegationOwner.sol";
 import { ProtocolOwner } from "./libs/owners/ProtocolOwner.sol";
+import { DelegationGuard } from "./libs/guards/DelegationGuard.sol";
 
 /**
  * @title DelegationWalletFactory
@@ -80,63 +81,150 @@ contract DelegationWalletFactory {
     /**
      * @notice Deploys a new DelegationWallet with the msg.sender as the owner.
      */
-    function deploy(address _delegationController) external returns (address, address, address) {
-        return deployFor(msg.sender, _delegationController);
+    function deploy(
+        address _delegationController
+    ) external returns (
+        address, 
+        address, 
+        address, 
+        address
+    ) {
+        return deployFor(
+            msg.sender, 
+            _delegationController
+        );
     }
 
-    /**
-     * @notice Deploys a new DelegationWallet for a given owner.
-     * @param _owner - The owner's address.
-     * @param _delegationController - Delegation controller owner
-     */
-    function deployFor(address _owner, address _delegationController) public returns (address, address, address) {
-        address safeProxy = address(
-            GnosisSafeProxyFactory(gnosisSafeProxyFactory).createProxy(singleton, new bytes(0))
+    function deployFor(
+        address _owner, 
+        address _delegationController
+    ) public returns (
+        address, 
+        address, 
+        address,
+        address
+    ) {
+        address[] memory proxies = deployProxies(_owner);
+      
+        initializeContracts(
+            proxies, 
+            _owner, 
+            _delegationController
         );
+        
+        setupSafe(
+            proxies[0], // safeProxy
+            _owner,
+            proxies[1], // delegationOwnerProxy
+            proxies[2] // protocolOwnerProxy
+         );
+      
+        registerWallet(
+            proxies[0], // safeProxy
+            proxies[1], // delegationOwnerProxy
+            proxies[2],  // delegationGuard;
+            proxies[3],  // protocolOwnerProxy 
+            _owner
+        );  
 
-        address delegationOwnerProxy = address(new BeaconProxy(ownerBeacon, new bytes(0)));
-        address protocolOwnerProxy = address(new BeaconProxy(protocolOwnerBeacon, new bytes(0)));
+        return (
+            proxies[0], // safeProxy
+            proxies[1], // delegationOwnerProxy
+            proxies[2],  // delegationGuard;
+            proxies[3]  // protocolOwnerProxy
+          );
+    }
+
+    function deployProxies(address _owner) internal returns (address[] memory) {
+
+        address[] memory proxies = new address[](4);
+      
+        proxies[0] = deploySafeProxy();
+        proxies[1] = deployDelegateOwnerProxy();
+        proxies[2] = deployDelegationGuard();
+        proxies[3] = deployProtocolOwnerProxy();
+      
+        return proxies;
+    }
+
+    function initializeContracts(address[] memory proxies, address _owner, address _delegationController) internal {
+        DelegationGuard guard = DelegationGuard(proxies[2]); 
+      
+        guard.initialize(proxies[1], proxies[3]);
+      
+        DelegationOwner delegationOwner = DelegationOwner(proxies[1]);
+      
+        delegationOwner.initialize(
+            proxies[2], // guard 
+            proxies[0], // safe
+            _owner,  
+            _delegationController,
+            proxies[3] // protocolOwner
+        );
+      
+        ProtocolOwner protocolOwner = ProtocolOwner(proxies[3]);  
+      
+        protocolOwner.initialize(
+            proxies[2], // guard
+            proxies[0], // safe
+            _owner, 
+            proxies[1] // delegationOwner
+        );
+    }
+      
+      
+    function setupSafe(address safeProxy, address _owner, address delegationOwnerProxy, address protocolOwnerProxy) internal {
 
         address[] memory owners = new address[](3);
-        owners[0] = _owner;
+      
+        owners[0] = _owner; 
         owners[1] = delegationOwnerProxy;
         owners[2] = protocolOwnerProxy;
-
-        // setup owners and threshold, this should be done before delegationOwner.initialize because DelegationOwners
-        // has to be an owner to be able to set the guard
+        
         GnosisSafe(payable(safeProxy)).setup(
             owners,
-            1,
+            1, // threshold
             address(0),
             new bytes(0),
             compatibilityFallbackHandler,
-            address(0),
+            address(0),  
             0,
             payable(address(0))
         );
-
-        //////////////////////////////////////////
-        // Delegation Owner
-        DelegationOwner delegationOwner = DelegationOwner(delegationOwnerProxy);
-        delegationOwner.initialize(guardBeacon, address(safeProxy), _owner, _delegationController, protocolOwnerProxy);
-
-        address delegationGuard = address(delegationOwner.guard());
-        //////////////////////////////////////////
-        // Protocol Owner
-        ProtocolOwner protocolOwner = ProtocolOwner(protocolOwnerProxy);
-        protocolOwner.initialize(address(safeProxy), _owner, address(delegationOwner));
-        //////////////////////////////////////////
-        // Save wallet
+      
+      }
+      
+      
+    function registerWallet(
+        address safeProxy,
+        address delegationOwnerProxy,  
+        address delegationGuard,
+        address protocolOwnerProxy, 
+        address _owner  
+    ) internal {
+      
         IDelegationWalletRegistry(registry).setWallet(
             safeProxy,
             _owner,
-            delegationOwnerProxy,
+            delegationOwnerProxy, 
             delegationGuard,
             protocolOwnerProxy
-        );
+        );  
+    }
 
-        emit WalletDeployed(safeProxy, _owner, delegationOwnerProxy, delegationGuard, msg.sender);
+    function deploySafeProxy() internal returns (address) {
+        return address(GnosisSafeProxyFactory(gnosisSafeProxyFactory).createProxy(singleton, new bytes(0))); 
+    }
+      
+    function deployDelegateOwnerProxy() internal returns (address) {
+        return address(new BeaconProxy(ownerBeacon, new bytes(0)));
+    }
+      
+    function deployProtocolOwnerProxy() internal returns (address) {
+        return address(new BeaconProxy(protocolOwnerBeacon, new bytes(0))); 
+    }
 
-        return (safeProxy, delegationOwnerProxy, delegationGuard);
+    function deployDelegationGuard() internal returns (address) {
+        return address(new BeaconProxy(guardBeacon, new bytes(0)));
     }
 }

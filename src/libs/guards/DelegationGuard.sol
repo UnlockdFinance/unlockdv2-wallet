@@ -10,6 +10,8 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import { DelegationOwner } from "../owners/DelegationOwner.sol";
+import { ProtocolOwner } from "../owners/ProtocolOwner.sol";
+
 import { ICryptoPunks } from "../../interfaces/ICryptoPunks.sol";
 import { IGnosisSafe } from "../../interfaces/IGnosisSafe.sol";
 import { AssetLogic } from "../logic/AssetLogic.sol";
@@ -33,6 +35,7 @@ contract DelegationGuard is Guard, Initializable {
 
     address public immutable cryptoPunks;
     address public delegationOwner;
+    address public protocolOwner;
     mapping(address => bool) public managerOwners;
 
     // any time an asset is locked or delegated, the address is saved here so any address present in this mapping
@@ -237,7 +240,7 @@ contract DelegationGuard is Guard, Initializable {
     function _checkConfiguration(address _to, bytes calldata _data) internal view {
         bytes4 selector = AssetLogic.getSelector(_data);
 
-        if (_to == DelegationOwner(delegationOwner).safe()) {
+        if (_to == DelegationOwner(delegationOwner).safe() || _to == ProtocolOwner(protocolOwner).safe()) {
             // ownership change not allowed while this guard is configured
             if (
                 selector == OwnerManager.addOwnerWithThreshold.selector ||

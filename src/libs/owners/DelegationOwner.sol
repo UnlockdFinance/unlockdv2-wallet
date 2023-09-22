@@ -27,6 +27,10 @@ import { ISignatureValidator } from "@gnosis.pm/safe-contracts/contracts/interfa
 
 import { BaseSafeOwner } from "../base/BaseSafeOwner.sol";
 
+import { IProtocolOwner} from "../../interfaces/IProtocolOwner.sol";
+
+import { console } from "forge-std/console.sol";
+
 /**
  * @title DelegationOwner
  * @author Unlockd
@@ -90,7 +94,7 @@ contract DelegationOwner is Initializable, BaseSafeOwner, ISignatureValidator, I
      */
     uint256 private currentSignatureDelegationAssets;
 
-    address private protocolOwner;
+    address public protocolOwner; // Dani
 
     ////////////////////////////////////////////////////////////////////////////////
     // Modifiers
@@ -128,20 +132,19 @@ contract DelegationOwner is Initializable, BaseSafeOwner, ISignatureValidator, I
 
     /**
      * @notice Initializes the proxy state.
-     * @param _guardBeacon - The address of the beacon where the proxy gets the implementation address.
-     * @param _safe - The DelegationWallet address, the GnosisSafe.
+     * @param _guard - The address of the beacon where the proxy gets the implementation address.
      * @param _owner - The owner of the DelegationWallet.
      * @param _delegationController - The address that acts as the delegation controller.
      * @param _protocolOwner - The address that acts as the delegation controller.
      */
     function initialize(
-        address _guardBeacon,
+        address _guard,
         address _safe,
         address _owner,
         address _delegationController,
         address _protocolOwner
     ) public initializer {
-        if (_guardBeacon == address(0)) revert Errors.DelegationGuard__initialize_invalidGuardBeacon();
+        if (_guard == address(0)) revert Errors.DelegationGuard__initialize_invalidGuardBeacon();
         if (_safe == address(0)) revert Errors.DelegationGuard__initialize_invalidSafe();
         if (_owner == address(0)) revert Errors.DelegationGuard__initialize_invalidOwner();
 
@@ -152,15 +155,16 @@ contract DelegationOwner is Initializable, BaseSafeOwner, ISignatureValidator, I
             _setDelegationController(_delegationController, true);
         }
 
-        address guardProxy = address(
-            new BeaconProxy(
-                _guardBeacon,
-                abi.encodeWithSelector(DelegationGuard.initialize.selector, address(this), _protocolOwner)
-            )
-        );
-        guard = DelegationGuard(guardProxy);
+        // address guardProxy = address(
+        //     new BeaconProxy(
+        //         _guardBeacon,
+        //         abi.encodeWithSelector(DelegationGuard.initialize.selector, address(this), _protocolOwner)
+        //     )
+        // );
+        guard = DelegationGuard(_guard);
 
-        _setupGuard(_safe, guard);
+        console.log("DGUARD::::::::", address(guard));
+        _setupGuard(safe, guard);
     }
 
     /**

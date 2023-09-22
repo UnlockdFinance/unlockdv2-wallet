@@ -12,7 +12,7 @@ import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/Upgradea
 contract DelegationWalletFactoryTest is Config {
     function setUp() public {
         vm.prank(kakaroto);
-        (safeProxy, delegationOwnerProxy, delegationGuardProxy) = delegationWalletFactory.deploy(delegationController);
+        (safeProxy, delegationOwnerProxy, delegationGuardProxy, protocolOwnerProxy) = delegationWalletFactory.deploy(delegationController);
         safe = GnosisSafe(payable(safeProxy));
     }
 
@@ -26,8 +26,8 @@ contract DelegationWalletFactoryTest is Config {
         console.log("owners[0]: %s", owners[0]);
         console.log("owners[1]: %s", owners[1]);
         console.log("owners[2]: %s", owners[2]);
+        console.log("karpincho: %s", karpincho);
         console.log(delegationWalletFactory.protocolOwnerBeacon());
-        //assertEq(owners[2], protocolOwner);
 
         bytes memory storageAt = safe.getStorageAt(uint256(GUARD_STORAGE_SLOT), 1);
         address configuredGuard = abi.decode(storageAt, (address));
@@ -40,7 +40,7 @@ contract DelegationWalletFactoryTest is Config {
     }
 
     function test_depploy_should_work_with_zero_controllers() public {
-        (safeProxy, delegationOwnerProxy, delegationGuardProxy) = delegationWalletFactory.deployFor(vegeta, address(0));
+        (safeProxy, delegationOwnerProxy, delegationGuardProxy, protocolOwnerProxy) = delegationWalletFactory.deployFor(vegeta, address(0));
 
         assertEq(DelegationOwner(delegationOwnerProxy).owner(), vegeta);
         assertEq(DelegationOwner(delegationOwnerProxy).aclManager(), address(aclManager));

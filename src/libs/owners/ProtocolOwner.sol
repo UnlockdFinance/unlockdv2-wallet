@@ -25,6 +25,8 @@ import { ISignatureValidator } from "../../../lib/safe-contracts/contracts/inter
 
 import { BaseSafeOwner } from "../base/BaseSafeOwner.sol";
 
+import { console } from "forge-std/console.sol";
+
 /**
  * @title ProtocolOwner
  * @author Unlockd
@@ -39,6 +41,8 @@ import { BaseSafeOwner } from "../base/BaseSafeOwner.sol";
  */
 contract ProtocolOwner is Initializable, BaseSafeOwner, IProtocolOwner {
     DelegationOwner public delegationOwner;
+    DelegationGuard public guard;
+
     mapping(bytes32 => bytes32) loansIds;
     mapping(address => bool) oneTimeDelegation;
 
@@ -65,13 +69,30 @@ contract ProtocolOwner is Initializable, BaseSafeOwner, IProtocolOwner {
      * @param _owner - The owner of the DelegationWallet.
      * @param _delegationOwner - Use delegation owner
      */
-    function initialize(address _safe, address _owner, address _delegationOwner) public initializer {
+    function initialize(
+        address _guard,
+        address _safe, 
+        address _owner, 
+        address _delegationOwner
+    ) public initializer {
         if (_safe == address(0)) revert Errors.DelegationGuard__initialize_invalidSafe();
         if (_owner == address(0)) revert Errors.DelegationGuard__initialize_invalidOwner();
 
         delegationOwner = DelegationOwner(_delegationOwner);
+        //guard = DelegationGuard(_guard);
         safe = _safe;
         owner = _owner;
+
+        // address guardProxy = address(
+        //     new BeaconProxy(
+        //         _guardBeacon,
+        //         abi.encodeWithSelector(DelegationGuard.initialize.selector, _delegationOwner, address(this))
+        //     )
+        // );
+        guard = DelegationGuard(_guard);
+
+        console.log("PGUARD::::::::", address(guard));
+        _setupGuard(safe, guard);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +284,7 @@ contract ProtocolOwner is Initializable, BaseSafeOwner, IProtocolOwner {
 
     function _setLoanId(bytes32 _assetId, bytes32 _loanId) internal {
         loansIds[_assetId] = _loanId;
-        DelegationGuard guard = delegationOwner.guard();
+        //DelegationGuard guard = delegationOwner.guard();
         // We update the guard from DelegationOwner
         if (_loanId == 0) {
             guard.unlockAsset(_assetId);
